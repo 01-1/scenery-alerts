@@ -17,9 +17,22 @@ scenery alerts v2" / "Start eastbound scenery alerts v2"). Allow location and no
 Each `.flo` has a `.json` beside it listing every alert with its position, scheduled time and text.
 
 Highlights: the Manhattan skyline, Rockville Bridge, the Statue of Liberty in the Susquehanna,
-Horseshoe Curve and the Conemaugh Gap. The flows also work on the other daily trains (44 east,
-45 west), which use the same track. In GTFS, train 43 leaves New York at 5:50, so the skyline may be
-only lights in winter, but it crosses the mountains around midday. Train 45 crosses them after dark.
+Horseshoe Curve and the Conemaugh Gap.
+
+Alerts are triggered by GPS, not the clock, so a flow works on any train that runs on that track.
+Only the warning distances depend on the timetable's speeds. The committed flows use Amtrak's
+timetable that starts 2026-11-18, which runs two trains each way:
+
+| Train | Leaves | Mountains (Altoona) |
+|---|---|---|
+| 42 east | Pittsburgh 7:10 | about 9:40 |
+| 44 east | Pittsburgh 13:00 | about 15:30 |
+| 43 west | New York 5:50 | about 12:20 |
+| 45 west | New York 12:25 | about 19:00, after dark |
+
+Before then there is one train each way: 42 leaves Pittsburgh at 7:30, and 43 leaves New York at
+10:52 and reaches Altoona about 17:10, around dusk in late autumn. To build for the timetable
+running on a given day, run `python3 build.py --date 2026-11-15 pennsylvanian`.
 
 ## How the flow behaves
 

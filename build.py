@@ -1,10 +1,12 @@
 """Build an Automate scenery-alert flow for one direction of a route.
 
     python3 build.py pennsylvanian east     # or west; no direction = all directions
+    python3 build.py --date 2026-11-15 pennsylvanian    # use the timetable running that day
 
 Reads the route's stop list, snaps each alert onto Amtrak's GTFS track shape, and writes
 out/<name>.flo plus a .json sidecar listing every alert with its position and schedule time.
 """
+import datetime
 import json
 import math
 import runpy
@@ -34,8 +36,8 @@ def enu(p, q):
 class Line:
     """Track shape plus timetable for one train."""
 
-    def __init__(self, route_id, train):
-        self.pts, stations = gtfs.trip(route_id, train)
+    def __init__(self, route_id, train, day):
+        self.info, self.pts, stations = gtfs.trip(route_id, train, day)
         self.ch = track.chain(self.pts)
         self.sched, prev = [], -1e18  # (chainage m, arrival min, departure min)
         for _, la, lo, arr, dep in stations:
@@ -173,11 +175,12 @@ def build_flow(rows, label):
     return data
 
 
-def build(route, direction):
+def build(route, direction, day=None):
     rdir = ROOT / 'routes' / route
     cfg = runpy.run_path(str(rdir / 'route.py'))
     d = cfg['DIRECTIONS'][direction]
-    line = Line(cfg['ROUTE_ID'], d['train'])
+    day = day or datetime.date.fromisoformat(cfg['TIMETABLE_DATE'])
+    line = Line(cfg['ROUTE_ID'], d['train'], day)
     rows = place(line, runpy.run_path(str(rdir / d['stops']))['S'])
     worst, early, fixed = check(line, rows)
     out = ROOT / 'out' / d['out']
@@ -185,17 +188,23 @@ def build(route, direction):
     data = build_flow(rows, d['label'])
     out.write_bytes(data)
     hm = lambda m: f'{int(m // 60)}:{int(m % 60):02d}'
-    json.dump([dict(title=r['ftitle'], kind=r['kind'], km=round(r['c_lm'] / 1000, 1),
-                    trig_km=round(r['trig'] / 1000, 2), eta=hm(line.eta(r['trig'])), off=round(r['off']),
-                    r=r['r'], lat=round(r['lat'], 5), lon=round(r['lon'], 5), text=r['text'])
-               for r in rows], open(str(out) + '.json', 'w'), indent=1, ensure_ascii=False)
-    print(f'{out.name}: {len(data)} bytes, 10 blocks, {len(rows)} alerts')
+    json.dump(dict(line.info, alerts=[
+        dict(title=r['ftitle'], kind=r['kind'], km=round(r['c_lm'] / 1000, 1),
+             trig_km=round(r['trig'] / 1000, 2), eta=hm(line.eta(r['trig'])), off=round(r['off']),
+             r=r['r'], lat=round(r['lat'], 5), lon=round(r['lon'], 5), text=r['text'])
+        for r in rows]), open(str(out) + '.json', 'w'), indent=1, ensure_ascii=False)
+    i = line.info
+    print(f"{out.name}: {len(data)} bytes, 10 blocks, {len(rows)} alerts; "
+          f"train {i['train']} departing {i['departs']}, timetable {i['timetable']}")
     print(f'  every circle first entered at its trigger, in order; earliest: {worst} {early} m early')
     print(f'  off-shape circles (km where the GTFS shape first enters them): {fixed}')
 
 
 if __name__ == '__main__':
-    route = sys.argv[1]
-    dirs = sys.argv[2:] or list(runpy.run_path(str(ROOT / 'routes' / route / 'route.py'))['DIRECTIONS'])
+    args, day = sys.argv[1:], None
+    if args[0] == '--date':
+        day = datetime.date.fromisoformat(args[1]); args = args[2:]
+    route = args[0]
+    dirs = args[1:] or list(runpy.run_path(str(ROOT / 'routes' / route / 'route.py'))['DIRECTIONS'])
     for dn in dirs:
-        build(route, dn)
+        build(route, dn, day)
