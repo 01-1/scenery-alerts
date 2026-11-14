@@ -75,3 +75,7 @@ Block and operator ids not listed there were worked out from the template.
   Schuylkill alerts use fixed circles instead of track-snapped ones.
 - GPS drops out in tunnels (Hudson, Gallitzin, Spruce Creek), and fixes can lag after them.
 - The skip logic assumes Automate treats true/false as 1/0 in arithmetic.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
