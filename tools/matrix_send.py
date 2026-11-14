@@ -1,9 +1,18 @@
+"""Send a message plus files to a Matrix room (e.g. built .flo files to your phone).
+
+    python3 tools/matrix_send.py check
+    python3 tools/matrix_send.py send "text" file...
+
+Reads MATRIX_HOMESERVER, MATRIX_ACCESS_TOKEN and MATRIX_ROOM_ID from the env file named by
+$MATRIX_ENV (default ~/credentials/matrix/relay.env). Never prints the token.
+Some homeservers reject urllib's default User-Agent, so requests send their own.
+"""
 import json,sys,os,uuid,urllib.request,urllib.parse
 from pathlib import Path
 env={}
-for l in (Path.home()/'credentials/matrix/relay.env').read_text().splitlines():
+for l in Path(os.environ.get('MATRIX_ENV', Path.home()/'credentials/matrix/relay.env')).read_text().splitlines():
     if '=' in l: k,v=l.split('=',1); env[k]=v
-HS=env['MATRIX_HOMESERVER']; TOK=env['MATRIX_ACCESS_TOKEN']; ROOM=env['MATRIX_ROOM_ID']; VI=env['MATRIX_VI_USER_ID']
+HS=env['MATRIX_HOMESERVER']; TOK=env['MATRIX_ACCESS_TOKEN']; ROOM=env['MATRIX_ROOM_ID']
 def req(method,path,body=None,ctype='application/json'):
     data=body if isinstance(body,bytes) or body is None else json.dumps(body).encode()
     r=urllib.request.Request(HS+path,data=data,method=method,headers={'Authorization':'Bearer '+TOK,'Content-Type':ctype,'User-Agent':'matrix-relay/1.0'})

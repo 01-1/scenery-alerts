@@ -1,10 +1,10 @@
-import csv, math
+import math
 R=6371000.0
-def load(path='/tmp/gtfs/shape106.csv'):
-    pts=[(float(r[1]),float(r[2])) for r in csv.reader(open(path))]
+def chain(pts):
+    """Cumulative distance (m) along a list of (lat, lon) points."""
     ch=[0.0]
     for a,b in zip(pts,pts[1:]): ch.append(ch[-1]+hav(a,b))
-    return pts,ch
+    return ch
 def hav(a,b):
     la1,lo1,la2,lo2=map(math.radians,(a[0],a[1],b[0],b[1]))
     h=math.sin((la2-la1)/2)**2+math.cos(la1)*math.cos(la2)*math.sin((lo2-lo1)/2)**2
