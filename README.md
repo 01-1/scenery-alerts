@@ -33,6 +33,9 @@ timetable that starts 2026-11-18, which runs two trains each way:
 Before then there is one train each way: 42 leaves Pittsburgh at 7:30, and 43 leaves New York at
 10:52 and reaches Altoona about 17:10, around dusk in late autumn. To build for the timetable
 running on a given day, run `python3 build.py --date 2026-11-15 pennsylvanian`.
+If the feed has no service for that date, the builder uses the next timetable
+that starts after it, or fails if there is none. Check the departure and
+timetable printed by the build and recorded in the `.json` sidecar.
 
 ## How the flow behaves
 
@@ -52,7 +55,9 @@ python3 build.py pennsylvanian west     # one direction
 ```
 
 The first run downloads [Amtrak's GTFS feed](https://content.amtrak.com/content/gtfs/GTFS.zip)
-into `data/` (git-ignored). The build reads the train's track shape and timetable from it, snaps each
+into `data/` (git-ignored) and reuses that cached zip on later runs. Without
+`--date`, the build uses `TIMETABLE_DATE` in `routes/<route>/route.py`, not today.
+The build reads the train's track shape and timetable from it, snaps each
 alert onto the track, checks that a ride along the track enters every circle at its trigger point and
 in list order, and writes `out/`.
 
